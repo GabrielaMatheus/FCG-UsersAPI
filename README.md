@@ -12,7 +12,7 @@ $env:RabbitMq__Password='guest'
 dotnet run --project src/FiapCloudGames.UsersApi
 ```
 
-Swagger: `http://localhost:5101/swagger`. Health check: `/health`.
+Swagger: `http://localhost:5101/swagger`. Health check: `/health`. Métricas Prometheus: `/metrics`.
 
 ## Variaveis de ambiente
 

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 var jwtSecret = builder.Configuration["Jwt:SecretKey"];
@@ -68,9 +69,11 @@ var app = builder.Build();
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseHttpMetrics();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
+app.MapMetrics();
 
 using (var scope = app.Services.CreateScope())
 {
