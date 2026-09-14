@@ -66,10 +66,10 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+app.UseHttpMetrics();
 app.UseMiddleware<ApiExceptionMiddleware>();
 app.UseSwagger();
-app.UseSwaggerUI();
-app.UseHttpMetrics();
+app.UseSwaggerUI(options => options.SwaggerEndpoint("v1/swagger.json", "FCG Users API v1"));
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapHealthChecks("/health");
