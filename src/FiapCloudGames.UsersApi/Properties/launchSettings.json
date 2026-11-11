@@ -7,9 +7,7 @@
       "launchUrl": "swagger",
       "applicationUrl": "http://localhost:5101",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development",
-        "Jwt__SecretKey": "development-only-secret-key-change-me-123456789",
-        "RabbitMq__Password": "guest"
+        "ASPNETCORE_ENVIRONMENT": "Development"
       }
     }
   }

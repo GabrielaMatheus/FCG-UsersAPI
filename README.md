@@ -1,48 +1,45 @@
-# FCG UsersAPI
+# FIAP Cloud Games - UsersAPI - Fase 4
 
-Microsservico de cadastro, autenticacao JWT e autorizacao de usuarios. Ao concluir um cadastro, publica `UserCreatedEvent` no RabbitMQ.
+Microsservico .NET 8 de cadastro, autenticacao JWT e autorizacao. Ao cadastrar um usuario, publica `UserCreatedEvent` no RabbitMQ.
 
-## Executar localmente
+## Persistencia e execucao
 
-Inicie um RabbitMQ em `localhost:5672` e execute:
+- Producao: Azure Database for PostgreSQL Flexible Server, permitindo multiplas replicas da API.
+- Desenvolvimento: SQLite, selecionado por `Database__Provider=Sqlite`.
+- Producao: `Database__Provider=Postgres`.
 
-```powershell
-$env:Jwt__SecretKey='development-only-secret-key-change-me-123456789'
-$env:RabbitMq__Password='guest'
-dotnet run --project src/FiapCloudGames.UsersApi
-```
+As connection strings, o segredo JWT, a senha do administrador e as credenciais do RabbitMQ sao obrigatorios em tempo de execucao. Nenhum deles fica no codigo ou nos YAMLs. O repositorio de orquestracao sincroniza o Azure Key Vault com o Secret `fcg-runtime` do Kubernetes.
 
-Swagger: `http://localhost:5101/swagger`. Health check: `/health`. Métricas Prometheus: `/metrics`.
+## Endpoints
 
-## Variaveis de ambiente
+| Metodo | Rota | Acesso |
+| --- | --- | --- |
+| POST | `/api/users` | Publico |
+| POST | `/api/users/login` | Publico |
+| GET | `/api/users/me` | JWT |
+| GET | `/api/users` | Administrador |
 
-| Variavel | Finalidade |
-| --- | --- |
-| `ConnectionStrings__UsersDatabase` | Connection string SQLite |
-| `Jwt__Issuer` / `Jwt__Audience` | Emissor e audiencia do JWT |
-| `Jwt__SecretKey` | Chave de assinatura, minimo de 32 caracteres |
-| `RabbitMq__Host` | Host do RabbitMQ |
-| `RabbitMq__Username` / `RabbitMq__Password` | Credenciais do broker |
-| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | Administrador inicial opcional |
-
-## Evento publicado
-
-```text
-FiapCloudGames.Contracts.UserCreatedEvent
-UserId: Guid; Name: string; Email: string; OccurredAtUtc: DateTime
-```
-
-## Docker e Kubernetes
-
-```powershell
-docker build -t fiapcloudgames/users-api:latest .
-kubectl apply -f k8s/users-api.yaml
-```
-
-Os valores `CHANGE-ME` no Secret representam segredos de ambiente. O manifesto espera o RabbitMQ acessivel pelo Service `rabbitmq`.
+Health check: `/health`. Metricas Prometheus: `/metrics`. Swagger: `/swagger`.
 
 ## Testes
 
 ```powershell
-dotnet test tests/FiapCloudGames.UsersApi.Tests
+dotnet test tests/FiapCloudGames.UsersApi.Tests/FiapCloudGames.UsersApi.Tests.csproj
 ```
+
+## CI/CD
+
+`.github/workflows/ci-cd.yml` executa build, testes, build da imagem, Trivy, push versionado para o Azure Container Registry e rolling update no AKS. O login no Azure usa OIDC, sem senha persistente.
+
+Configure o GitHub Environment `production` com estas variables:
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_RESOURCE_GROUP`
+- `AKS_CLUSTER_NAME`
+- `ACR_NAME`
+- `ACR_LOGIN_SERVER`
+- `ACR_REPOSITORY=fcg-users-api`
+
+O Terraform, os manifestos e o deploy inicial estao no repositorio `FCG-Orchestration`.

@@ -15,8 +15,16 @@ var jwtSecret = builder.Configuration["Jwt:SecretKey"];
 if (string.IsNullOrWhiteSpace(jwtSecret) || jwtSecret.Length < 32)
     throw new InvalidOperationException("Jwt:SecretKey deve ter pelo menos 32 caracteres.");
 
+var usersConnection = builder.Configuration.GetConnectionString("UsersDatabase")
+    ?? throw new InvalidOperationException("ConnectionStrings:UsersDatabase nao configurada.");
+var databaseProvider = builder.Configuration["Database:Provider"] ?? "Sqlite";
 builder.Services.AddDbContext<UsersDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("UsersDatabase")));
+{
+    if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase))
+        options.UseNpgsql(usersConnection, npgsql => npgsql.EnableRetryOnFailure());
+    else
+        options.UseSqlite(usersConnection);
+});
 builder.Services.AddScoped<UserService>();
 builder.Services.AddSingleton<PasswordHasher>();
 builder.Services.AddSingleton<JwtTokenService>();
@@ -24,8 +32,10 @@ builder.Services.AddMassTransit(bus => bus.UsingRabbitMq((context, cfg) =>
 {
     cfg.Host(builder.Configuration["RabbitMq:Host"] ?? "localhost", "/", host =>
     {
-        host.Username(builder.Configuration["RabbitMq:Username"] ?? "guest");
-        host.Password(builder.Configuration["RabbitMq:Password"] ?? "guest");
+        host.Username(builder.Configuration["RabbitMq:Username"]
+            ?? throw new InvalidOperationException("RabbitMq:Username nao configurado."));
+        host.Password(builder.Configuration["RabbitMq:Password"]
+            ?? throw new InvalidOperationException("RabbitMq:Password nao configurado."));
     });
     cfg.ConfigureEndpoints(context);
 }));
